@@ -1,16 +1,29 @@
 import random
+import math
+from itertools import combinations
 
 
 class Graph:
-    def __init__(self, vertices, edges_list=None):
-        self.n = vertices
+    def __init__(self, edges_list=None):
         self.edges_list = edges_list
+        self.n, self.vertices = self.compute_num_vertices()
 
     def get_edges(self):
         return self.edges_list
 
     def get_vertices(self):
-        return self.n
+        return self.vertices
+
+    def compute_num_vertices(self):
+        vertices = set()
+
+        for edge in self.edges_list:
+            # adding to the set all the vertices encountered
+            vertices.add(edge[0])
+            vertices.add(edge[1])
+
+        self.n = len(vertices)
+        return self.n, vertices
 
     def contraction(self, random_edge):
         """
@@ -18,7 +31,7 @@ class Graph:
         :param random_edge: list of two vertices, representing an edge [u, v]
         :return: None
         """
-        self.n -= 1  # decrease the number of vertices # ro
+
         u, v = random_edge
 
         while random_edge in self.edges_list:
@@ -35,48 +48,65 @@ class Graph:
                 if s != u:
                     self.edges_list[i][1] = u
 
-    def contract_algo(self):
+        self.compute_num_vertices()
+
+    def contract_algo(self, t=2):
         """
         implementation of the kurger's minimum cut algorithm.
         :return: the remaining edges_list that represented the minimum cut.
         """
-        while self.n >= 2:
+        while self.n > t:
             random_pick_e = random.choice(self.edges_list)
             print("RANDOM_PICK:  ---", random_pick_e, "---\n", self.edges_list)
             self.contraction(random_pick_e)
             print("AFTER CONTRACTION:\n", self.edges_list)
-            print("Nombre de sommets:", self.n)
+            print("Number of vertices:", self.n)
 
         return self.edges_list
 
     def fast_cut_aglo(self):
-        return None
+        self.compute_num_vertices()  # update n because edges_list change
+        if self.n <= 6:
+            return self.brute_force_min_cut()
+
+        else:
+            t = math.ceil(1 + self.n / math.sqrt(2))
+            H1 = self.contract_algo(t)
+            H2 = self.contract_algo(t)
+
+            self.edges_list = H1
+            cut_1 = self.fast_cut_aglo()
+
+            self.edges_list = H2
+            cut_2 = self.fast_cut_aglo()
+
+            return min(cut_1, cut_2)
+
+    def brute_force_min_cut(self):
+        min_cut = float('inf')
+        min_cut_edges = []
+        for subset_size in range(1, self.n // 2 + 1):
+            for subset in combinations(self.get_vertices(), subset_size):
+                partition = set(subset)
+
+                if len(partition) == 0 or len(partition) == self.n:
+                    continue  # Ignorer les partitions triviales
+
+                cut_edges = []
+                for edge in self.edges_list:
+                    u, v = edge
+                    if (u in partition and v not in partition) or (v in partition and u not in partition):
+                        cut_edges.append(edge)
+
+                # Update the minimum cut if the current cut is smaller
+                if len(cut_edges) < min_cut:
+                    min_cut = len(cut_edges)
+                    min_cut_edges = cut_edges
+
+        return min_cut
 
 
-"""    def generate_particular_graph(self, graph_type, num_edges):
-        edges_list = []
-        match graph_type:
-            case "complete":
-                edges_list = [(u, v) for u in range(self.n) for v in range(u + 1, self.n)]
-
-            case "star":
-                edge_list = [(0, i) for i in range(self.n) if i != 0]
-
-            case "grid":
-                edges_list = []
-
-            case "random":
-                # random multigraph
-                edges_list = []
-
-            case "multigraph":
-                # deterministic multigraph
-                edges_list = []
-
-        return edges_list
-
-"""
-
+# Example graph of the picture in the lecture note and Homework II assignment:
 edges_list = [
     [1, 2], [1, 3], [1, 4], [1, 5],
     [2, 3], [2, 4], [2, 5],
@@ -88,6 +118,19 @@ edges_list = [
     [9, 10], [9, 6],
     [10, 6]
 ]
-test_graph = Graph(10, edges_list)
-test_graph.contract_algo()
-print(test_graph.get_edges())
+
+brut_force_test_edge_list = [
+    [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [4, 5]
+]
+
+fast_cut_aglo = True
+
+# test_graph = Graph(brut_force_test_edge_list)
+# print(test_graph.brute_force_min_cut())
+
+
+test_graph = Graph(edges_list)
+if fast_cut_aglo:
+    print(test_graph.fast_cut_aglo())
+else:
+    test_graph.contract_algo()
