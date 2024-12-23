@@ -40,7 +40,7 @@ def contraction(graph, random_edge):
         Contraction of a random edge, change the self.edges_list to adapt the graph.
         :param graph:
         :param random_edge: list of two vertices, representing an edge [u, v]
-        :return: None
+        :return: the graph with the random_edge contracted
         """
 
     u, v = random_edge
@@ -71,23 +71,23 @@ def contraction(graph, random_edge):
 def contract_algo(graph, t=2):
     """
     implementation of the kurger's minimum cut algorithm.
-    :return: the remaining edges_list that represented the minimum cut.
+    :return: the remaining graph that represented the minimum cut.
     """
 
     contrated_graph = copy.deepcopy(graph)
 
     while contrated_graph.get_n() > t:
         random_pick_e = random.choice(contrated_graph.get_edges())
-        print("RANDOM_PICK:  ---", random_pick_e, "---")
-        print("BEFORE CONTRACTION:\n", contrated_graph.get_edges())
         contrated_graph = contraction(contrated_graph, random_pick_e)
-        print("AFTER CONTRACTION:\n", contrated_graph.get_edges())
-        print("Number of vertices:", contrated_graph.get_n())
 
     return contrated_graph
 
 
 def fast_cut_aglo(graph):
+    """
+    implementation of the kurger's minimum cut algorithm
+    :return: the cut size an the remaining edges_list that represented the minimum cut.
+    """
     n = graph.get_n()
 
     if n <= 6:
@@ -108,6 +108,10 @@ def fast_cut_aglo(graph):
 
 
 def brute_force_min_cut(graph):
+    """
+    :return: Brute force the minimum cut of the graph given as parameter by enumerate all the possible partitions and
+    take the lowest one. return min_cut size and the min_cut_edges list.
+    """
     min_cut = float('inf')
     min_cut_edges = []
     vertices = graph.get_vertices()
@@ -151,17 +155,19 @@ edges_list = [
 ]
 test_contraction_list = [[1, 2], [1, 3], [2, 3], [2, 4], [3, 4]]
 brut_force_test_edge_list = [
-    [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [4, 5]
+    [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [4, 5], [2,6], [4, 7]
 ]
 
-test_brute_force_graph = Graph(brut_force_test_edge_list)
-test_graph = Graph(edges_list)
+#test_brute_force_graph = Graph(brut_force_test_edge_list)
+#test_graph = Graph(brut_force_test_edge_list)
 
-fast_cut_flag = True
-if fast_cut_flag:
-    print(fast_cut_aglo(test_graph))
-else:
-    print(contract_algo(test_graph).get_edges())
+
+#fast_cut_flag = True
+
+#if fast_cut_flag:
+#    print(fast_cut_aglo(test_graph))
+#else:
+#    print(contract_algo(test_graph).get_edges())
 
 #print(brute_force_min_cut(test_brute_force_graph))
 
