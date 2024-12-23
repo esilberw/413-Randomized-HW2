@@ -1,3 +1,4 @@
+import copy
 import random
 import math
 from itertools import combinations
@@ -22,7 +23,7 @@ class Graph:
             vertices.add(edge[0])
             vertices.add(edge[1])
 
-        self.n = len(vertices)
+        self.n = len(vertices)  # to update the value, after contraction
         return self.n, vertices
 
     def contraction(self, random_edge):
@@ -50,14 +51,16 @@ class Graph:
 
         self.compute_num_vertices()
 
-    def contract_algo(self, t=2):
+    def contract_algo(self, t=2, edges=None):
         """
         implementation of the kurger's minimum cut algorithm.
         :return: the remaining edges_list that represented the minimum cut.
         """
+
+        if edges is None:
         while self.n > t:
             random_pick_e = random.choice(self.edges_list)
-            print("RANDOM_PICK:  ---", random_pick_e, "---\n", self.edges_list)
+            print("RANDOM_PICK:  ---", random_pick_e, "---")
             self.contraction(random_pick_e)
             print("AFTER CONTRACTION:\n", self.edges_list)
             print("Number of vertices:", self.n)
@@ -65,45 +68,57 @@ class Graph:
         return self.edges_list
 
     def fast_cut_aglo(self):
-        self.compute_num_vertices()  # update n because edges_list change
+        original_edges_list = copy.deepcopy(self.edges_list)
+
         if self.n <= 6:
+            print('oui')
             return self.brute_force_min_cut()
 
+        t = math.ceil(1 + self.n / math.sqrt(2))
+
+        H1 = Graph(self.contract_algo(t))
+        self.edges_list = original_edges_list
+        self.compute_num_vertices()
+        H2 = Graph(self.contract_algo(t))
+
+        H2copy = copy.deepcopy(H2.edges_list)
+        cut_1, edges_list_1 = H1.fast_cut_aglo()
+        H2.edges_list = H2copy
+        cut_2, edges_list_2 = H2.fast_cut_aglo()
+
+        print(cut_1, cut_2)
+
+        if cut_1 < cut_2:
+            return cut_1, edges_list_1
         else:
-            t = math.ceil(1 + self.n / math.sqrt(2))
-            H1 = self.contract_algo(t)
-            H2 = self.contract_algo(t)
-
-            self.edges_list = H1
-            cut_1 = self.fast_cut_aglo()
-
-            self.edges_list = H2
-            cut_2 = self.fast_cut_aglo()
-
-            return min(cut_1, cut_2)
+            return cut_2, edges_list_2
 
     def brute_force_min_cut(self):
         min_cut = float('inf')
         min_cut_edges = []
-        for subset_size in range(1, self.n // 2 + 1):
-            for subset in combinations(self.get_vertices(), subset_size):
+        vertices = self.get_vertices()
+
+        for subset_size in range(1, self.n):
+            for subset in combinations(vertices, subset_size):  # enumerate all the possible partitions:
+
                 partition = set(subset)
 
-                if len(partition) == 0 or len(partition) == self.n:
-                    continue  # Ignorer les partitions triviales
+                if len(partition) == 0 or len(partition) == self.n or len(partition) == 1:
+                    continue
 
                 cut_edges = []
+
                 for edge in self.edges_list:
                     u, v = edge
                     if (u in partition and v not in partition) or (v in partition and u not in partition):
                         cut_edges.append(edge)
 
-                # Update the minimum cut if the current cut is smaller
-                if len(cut_edges) < min_cut:
+                # Update the minimum cut if the current cut is smaller but bigger than 0
+                if 0 <= len(cut_edges) < min_cut:
                     min_cut = len(cut_edges)
                     min_cut_edges = cut_edges
 
-        return min_cut
+        return min_cut, min_cut_edges
 
 
 # Example graph of the picture in the lecture note and Homework II assignment:
@@ -120,17 +135,15 @@ edges_list = [
 ]
 
 brut_force_test_edge_list = [
-    [1, 2], [1, 3], [2, 3], [2, 4], [3, 4], [4, 5]
+    [3, 2], [1, 3], [3, 10], [2, 3], [2, 10], [2, 3], [3, 10], [10, 3], [3, 10], [3, 10], [7, 10], [10, 9], [10, 9], [9, 10], [9, 10]
 ]
 
 fast_cut_aglo = True
-
-# test_graph = Graph(brut_force_test_edge_list)
-# print(test_graph.brute_force_min_cut())
-
+test_brute_force_graph = Graph(edges_list)
+print(test_brute_force_graph.brute_force_min_cut())
 
 test_graph = Graph(edges_list)
 if fast_cut_aglo:
     print(test_graph.fast_cut_aglo())
 else:
-    test_graph.contract_algo()
+    print(test_graph.contract_algo())

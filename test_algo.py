@@ -2,6 +2,7 @@ class test_algo:
     def __init__(self):
         return None
 
+
 def generate_particular_graph(self, graph_type, num_edges):
     edges_list = []
     if graph_type == "complete":
